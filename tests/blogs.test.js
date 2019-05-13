@@ -1,16 +1,14 @@
-
 const Page = require('./helper/page');
 let page;
 
 beforeEach(async () => {
     page = await Page.build();
-    await page.goto('localhost:3000');
+    await page.goto('http://localhost:3000');
 });
 
 afterEach(async () => {
     await page.close();
 });
-
 
 
 describe('When Logged In', async () => {
@@ -33,13 +31,18 @@ describe('When Logged In', async () => {
             await page.click('form button');
         });
 
-       test('Submitting takes user to review screen', async () => {
+        test('Submitting takes user to review screen', async () => {
             const text = await page.getContestsOf('h5');
             expect(text).toEqual('Please confirm your entries');
-       }) ;
-       test('Submitting then saving adds blog to index page', async () => {
-
-       })
+        });
+        test('Submitting then saving adds blog to index page', async () => {
+            await page.click('button.green');
+            await page.waitFor('.card');
+            const title = await page.getContestsOf('.card-title');
+            const content = await page.getContestsOf('p');
+            expect(title).toEqual('My Test Title');
+            expect(content).toEqual('Test Content');
+        })
     });
 
     describe('And Using invalid inputs', async () => {
@@ -54,3 +57,29 @@ describe('When Logged In', async () => {
         });
     })
 });
+
+describe('User is not logged in', async () => {
+
+    const actions = [
+        {
+            method: 'get',
+            path: 'api/blogs'
+        },
+        {
+            method: 'post',
+            path: 'api/blogs',
+            body: {
+                title: 'Title Test',
+                content: 'Content Test'
+            }
+        }
+    ];
+    test('All blog related action are prohibited', async () => {
+        const results = await page.execRequest(actions);
+        for (let result of results) {
+            expect(result).toEqual({ error: 'You must log in!'});
+        }
+    })
+});
+
+
